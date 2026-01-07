@@ -22,32 +22,20 @@ class ImageManager:
             'height': y_end - y_start
         })
 
-    def save_spliced_image(self, filename: str, layout='horizontal'):
+    def save_spliced_image(self, filename: str):
         if not self.rectangles:
             return
 
         channels = self.pixels.shape[2] if self.pixels.ndim == 3 else 1
+        total_width = sum(r['width'] for r in self.rectangles)
+        max_height = max(r['height'] for r in self.rectangles)
+        final_pixels = np.zeros((max_height, total_width, channels), dtype=np.uint8)
 
-        if layout == 'horizontal':
-            total_width = sum(r['width'] for r in self.rectangles)
-            max_height = max(r['height'] for r in self.rectangles)
-            final_pixels = np.zeros((max_height, total_width, channels), dtype=np.uint8)
-
-            x_offset = 0
-            for rect in self.rectangles:
-                w, h = rect['width'], rect['height']
-                final_pixels[:h, x_offset:x_offset + w] = rect['pixels']
-                x_offset += w
-        else:  # vertical
-            max_width = max(r['width'] for r in self.rectangles)
-            total_height = sum(r['height'] for r in self.rectangles)
-            final_pixels = np.zeros((total_height, max_width, channels), dtype=np.uint8)
-
-            y_offset = 0
-            for rect in self.rectangles:
-                w, h = rect['width'], rect['height']
-                final_pixels[y_offset:y_offset + h, :w] = rect['pixels']
-                y_offset += h
+        x_offset = 0
+        for rect in self.rectangles:
+            w, h = rect['width'], rect['height']
+            final_pixels[:h, x_offset:x_offset + w] = rect['pixels']
+            x_offset += w
 
         new_image = Image.fromarray(final_pixels, mode='RGBA' if channels == 4 else 'RGB')
         new_image.save(filename)
